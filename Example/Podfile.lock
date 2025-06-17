@@ -1,0 +1,23 @@
+PODS:
+  - RSBeforeAfterImageView (0.1.0)
+  - SnapKit (5.7.1)
+
+DEPENDENCIES:
+  - RSBeforeAfterImageView (from `../`)
+  - SnapKit
+
+SPEC REPOS:
+  trunk:
+    - SnapKit
+
+EXTERNAL SOURCES:
+  RSBeforeAfterImageView:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  RSBeforeAfterImageView: 7ae1d1aff63d5f0fb3088babf57f8afa8c7f3cf8
+  SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
+
+PODFILE CHECKSUM: 240cea2be3d7f1f0a63899560b276310506b1687
+
+COCOAPODS: 1.16.2

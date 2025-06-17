@@ -1,0 +1,11 @@
+use_frameworks!
+platform :ios, '14.0'
+
+target 'RSBeforeAfterImageView_Example' do
+  pod 'RSBeforeAfterImageView', :path => '../'
+  pod 'SnapKit'
+end
+
+target 'RSBeforeAfterImageView_Tests' do
+  pod 'RSBeforeAfterImageView', :path => '../'
+end
