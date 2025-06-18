@@ -8,8 +8,10 @@
 import UIKit
 
 public class RSBeforeAfterImageView: UIView {
-    public let beforeImageView = UIImageView()
-    public let afterImageView = UIImageView()
+    /// The bottom image, will be visible when the divider is to the left
+    public let bottomImageView = UIImageView()
+    /// The top image, will be visible when the divider is to the right
+    public let topImageView = UIImageView()
     private let dividerView = UIView()
     private let touchAreaView = UIView()
     private let grabHandle = UIView()
@@ -174,11 +176,11 @@ public class RSBeforeAfterImageView: UIView {
     }
 
     private func setupViews() {
-        beforeImageView.contentMode = .scaleAspectFill
-        afterImageView.contentMode = .scaleAspectFill
+        bottomImageView.contentMode = .scaleAspectFill
+        topImageView.contentMode = .scaleAspectFill
 
-        addSubview(beforeImageView)
-        addSubview(afterImageView)
+        addSubview(bottomImageView)
+        addSubview(topImageView)
         addSubview(dividerView)
         addSubview(touchAreaView)
 
@@ -212,8 +214,8 @@ public class RSBeforeAfterImageView: UIView {
         touchAreaView.addSubview(grabHandle)
         
         // Set initial frames
-        beforeImageView.frame = bounds
-        afterImageView.frame = bounds
+        bottomImageView.frame = bounds
+        topImageView.frame = bounds
         
         // Position touch area centered on divider
         let touchAreaSize = CGSize(width: 64, height: 80)
@@ -229,7 +231,7 @@ public class RSBeforeAfterImageView: UIView {
         
         maskLayer.frame = bounds
         updateMask(x: bounds.midX)
-        afterImageView.layer.mask = maskLayer
+        topImageView.layer.mask = maskLayer
     }
 
     private func updateDividerPosition() {
@@ -252,8 +254,8 @@ public class RSBeforeAfterImageView: UIView {
         super.layoutSubviews()
         
         // Update image views to fill the bounds
-        beforeImageView.frame = bounds
-        afterImageView.frame = bounds
+        bottomImageView.frame = bounds
+        topImageView.frame = bounds
         
         // Only reset divider position if bounds actually changed
         if bounds != previousBounds {
@@ -313,8 +315,8 @@ public class RSBeforeAfterImageView: UIView {
 
     // Public setup
     public func configure(before: UIImage, after: UIImage) {
-        beforeImageView.image = before
-        afterImageView.image = after
+        bottomImageView.image = before
+        topImageView.image = after
     }
 }
 
