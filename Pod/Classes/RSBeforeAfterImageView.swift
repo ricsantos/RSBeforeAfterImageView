@@ -89,6 +89,13 @@ public class RSBeforeAfterImageView: UIView {
         }
     }
     
+    /// The inset for the grab handle icon from the edges
+    public var grabHandleIconInset: CGFloat = 4.0 {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
     /// The type of background for the grab handle
     public enum GrabHandleBackgroundStyle {
         case color(UIColor)
@@ -145,7 +152,7 @@ public class RSBeforeAfterImageView: UIView {
         grabHandleIconView.tintColor = grabHandleIconTintColor
         grabHandleIconView.isHidden = grabHandleIcon == nil
         if grabHandleIcon != nil {
-            let inset: CGFloat = 4
+            let inset = grabHandleIconInset
             grabHandleIconView.frame = CGRect(
                 x: inset,
                 y: inset,
