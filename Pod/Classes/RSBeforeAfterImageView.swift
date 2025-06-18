@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import QuartzCore
 
 public class RSBeforeAfterImageView: UIView {
     /// The bottom image, will be visible when the divider is to the left
@@ -38,6 +39,21 @@ public class RSBeforeAfterImageView: UIView {
         let newPosition = max(0.0, min(1.0, position))
         
         if animated {
+            // Animate the mask layer path
+            let animation = CABasicAnimation(keyPath: "path")
+            animation.duration = duration
+            animation.timingFunction = CAMediaTimingFunction.init(name: "easeInEaseOut")
+            
+            let fromPath = UIBezierPath(rect: CGRect(x: 0, y: 0, width: bounds.width * dividerPosition, height: bounds.height))
+            let toPath = UIBezierPath(rect: CGRect(x: 0, y: 0, width: bounds.width * newPosition, height: bounds.height))
+            
+            animation.fromValue = fromPath.cgPath
+            animation.toValue = toPath.cgPath
+            
+            maskLayer.add(animation, forKey: "pathAnimation")
+            maskLayer.path = toPath.cgPath
+            
+            // Animate the divider position
             UIView.animate(withDuration: duration, delay: 0.0, options: .curveEaseInOut, animations: {
                 self.dividerPosition = newPosition
             }, completion: { _ in
