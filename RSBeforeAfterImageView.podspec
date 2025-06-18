@@ -30,6 +30,7 @@ Given two images, it puts one on top of the other, and provides a slider to slid
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '14.0'
+  s.swift_version = '5.0'
 
   s.source_files = 'Pod/Classes/**/*'
   

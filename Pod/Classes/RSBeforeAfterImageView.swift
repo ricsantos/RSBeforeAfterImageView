@@ -42,7 +42,7 @@ public class RSBeforeAfterImageView: UIView {
             // Animate the mask layer path
             let animation = CABasicAnimation(keyPath: "path")
             animation.duration = duration
-            animation.timingFunction = CAMediaTimingFunction.init(name: "easeInEaseOut")
+            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             
             let fromPath = UIBezierPath(rect: CGRect(x: 0, y: 0, width: bounds.width * dividerPosition, height: bounds.height))
             let toPath = UIBezierPath(rect: CGRect(x: 0, y: 0, width: bounds.width * newPosition, height: bounds.height))
