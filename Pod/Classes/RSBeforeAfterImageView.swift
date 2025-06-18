@@ -8,9 +8,8 @@
 import UIKit
 
 public class RSBeforeAfterImageView: UIView {
-
-    private let beforeImageView = UIImageView()
-    private let afterImageView = UIImageView()
+    public let beforeImageView = UIImageView()
+    public let afterImageView = UIImageView()
     private let dividerView = UIView()
     private let touchAreaView = UIView()
     private let grabHandle = UIView()
