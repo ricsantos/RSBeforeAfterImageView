@@ -49,11 +49,15 @@ class ExampleViewController: UIViewController {
         }
         
         self.loadBeforeAfterAssets()
+        
+        self.beforeAfterImageView.grabHandleSize = CGSize(width: 36, height: 36)
+        self.beforeAfterImageView.grabHandleCornerRadius = 18
+        self.beforeAfterImageView.grabHandleBackgroundStyle = .blur(.regular)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        assert(false)
+        //assert(false)
     }
     
     override func viewDidAppear(_ animated: Bool) {

@@ -16,12 +16,93 @@ public class RSBeforeAfterImageView: UIView {
     private let grabHandle = UIView()
     private var maskLayer = CAShapeLayer()
     private var previousBounds: CGRect = .zero
+    private var blurView: UIVisualEffectView?
     
     /// The position of the divider, normalized from 0.0 to 1.0
     private var dividerPosition: CGFloat = 0.5 {
         didSet {
             dividerPosition = max(0.0, min(1.0, dividerPosition))
             updateDividerPosition()
+        }
+    }
+    
+    /// The size of the grab handle
+    public var grabHandleSize: CGSize = CGSize(width: 24, height: 40) {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The corner radius of the grab handle
+    public var grabHandleCornerRadius: CGFloat = 12 {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The border color of the grab handle
+    public var grabHandleBorderColor: UIColor = .white {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The border width of the grab handle
+    public var grabHandleBorderWidth: CGFloat = 1.0 {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The type of background for the grab handle
+    public enum GrabHandleBackgroundStyle {
+        case color(UIColor)
+        case blur(UIBlurEffect.Style)
+    }
+    
+    /// The background of the grab handle
+    public var grabHandleBackgroundStyle: GrabHandleBackgroundStyle = .color(UIColor(white: 1.0, alpha: 1.0)) {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    private func updateGrabHandleAppearance() {
+        // Update size
+        let handleSize = grabHandleSize
+        grabHandle.frame = CGRect(
+            x: (touchAreaView.bounds.width - handleSize.width)/2,
+            y: (touchAreaView.bounds.height - handleSize.height)/2,
+            width: handleSize.width,
+            height: handleSize.height
+        )
+        
+        // Update corner radius
+        grabHandle.layer.cornerRadius = grabHandleCornerRadius
+        
+        // Update border
+        grabHandle.layer.borderColor = grabHandleBorderColor.cgColor
+        grabHandle.layer.borderWidth = grabHandleBorderWidth
+        
+        // Update background
+        switch grabHandleBackgroundStyle {
+        case .color(let color):
+            blurView?.removeFromSuperview()
+            blurView = nil
+            grabHandle.backgroundColor = color
+            
+        case .blur(let style):
+            blurView?.removeFromSuperview()
+            
+            let blurEffect = UIBlurEffect(style: style)
+            let newBlurView = UIVisualEffectView(effect: blurEffect)
+            newBlurView.frame = grabHandle.bounds
+            newBlurView.layer.cornerRadius = grabHandleCornerRadius
+            newBlurView.clipsToBounds = true
+            grabHandle.insertSubview(newBlurView, at: 0)
+            blurView = newBlurView
+            
+            grabHandle.backgroundColor = .clear
         }
     }
 
@@ -59,17 +140,11 @@ public class RSBeforeAfterImageView: UIView {
         touchAreaView.isUserInteractionEnabled = true
 
         // Style the grab handle
-        grabHandle.layer.cornerRadius = 12
         grabHandle.layer.cornerCurve = .continuous
-        grabHandle.backgroundColor = .white
         grabHandle.layer.shadowColor = UIColor.black.cgColor
         grabHandle.layer.shadowOpacity = 0.2
         grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
         grabHandle.layer.shadowRadius = 4
-        
-        // Add a subtle border to make it more visible
-        grabHandle.layer.borderWidth = 1
-        grabHandle.layer.borderColor = UIColor.black.withAlphaComponent(0.1).cgColor
         grabHandle.isUserInteractionEnabled = false
         
         touchAreaView.addSubview(grabHandle)
@@ -87,14 +162,8 @@ public class RSBeforeAfterImageView: UIView {
             height: touchAreaSize.height
         )
         
-        // Position grab handle centered in touch area
-        let handleSize = CGSize(width: 24, height: 40)
-        grabHandle.frame = CGRect(
-            x: (touchAreaSize.width - handleSize.width)/2,
-            y: (touchAreaSize.height - handleSize.height)/2,
-            width: handleSize.width,
-            height: handleSize.height
-        )
+        // Update grab handle appearance
+        updateGrabHandleAppearance()
         
         maskLayer.frame = bounds
         updateMask(x: bounds.midX)
@@ -148,14 +217,10 @@ public class RSBeforeAfterImageView: UIView {
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        //print("Gesture state: \(gesture.state.rawValue)")
-        
         switch gesture.state {
         case .began:
-            print("Gesture began")
             UIView.animate(withDuration: 0.1) {
                 self.grabHandle.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-                self.grabHandle.backgroundColor = UIColor.white.withAlphaComponent(0.95)
                 self.grabHandle.layer.shadowOpacity = 0.4
                 self.grabHandle.layer.shadowRadius = 6
                 self.grabHandle.layer.shadowOffset = CGSize(width: 0, height: 3)
@@ -167,21 +232,15 @@ public class RSBeforeAfterImageView: UIView {
             dividerPosition = newX / bounds.width
             gesture.setTranslation(.zero, in: self)
         case .ended, .cancelled, .failed:
-            print("Gesture ended/cancelled/failed")
-            resetHandleAppearance()
+            UIView.animate(withDuration: 0.2) {
+                self.grabHandle.transform = .identity
+                self.grabHandle.layer.shadowOpacity = 0.2
+                self.grabHandle.layer.shadowRadius = 4
+                self.grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
+                self.grabHandle.layer.borderWidth = 1
+            }
         case .possible:
-            print("Gesture possible")
-        }
-    }
-    
-    private func resetHandleAppearance() {
-        UIView.animate(withDuration: 0.2) {
-            self.grabHandle.transform = .identity
-            self.grabHandle.backgroundColor = .white
-            self.grabHandle.layer.shadowOpacity = 0.2
-            self.grabHandle.layer.shadowRadius = 4
-            self.grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
-            self.grabHandle.layer.borderWidth = 1
+            break
         }
     }
 
