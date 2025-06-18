@@ -12,9 +12,18 @@ public class RSBeforeAfterImageView: UIView {
     private let beforeImageView = UIImageView()
     private let afterImageView = UIImageView()
     private let dividerView = UIView()
+    private let touchAreaView = UIView()
     private let grabHandle = UIView()
-
     private var maskLayer = CAShapeLayer()
+    private var previousBounds: CGRect = .zero
+    
+    /// The position of the divider, normalized from 0.0 to 1.0
+    private var dividerPosition: CGFloat = 0.5 {
+        didSet {
+            dividerPosition = max(0.0, min(1.0, dividerPosition))
+            updateDividerPosition()
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -33,6 +42,7 @@ public class RSBeforeAfterImageView: UIView {
         addSubview(beforeImageView)
         addSubview(afterImageView)
         addSubview(dividerView)
+        addSubview(touchAreaView)
 
         // Style the divider
         dividerView.backgroundColor = .white
@@ -40,15 +50,71 @@ public class RSBeforeAfterImageView: UIView {
         dividerView.layer.shadowOpacity = 0.3
         dividerView.layer.shadowOffset = .zero
         dividerView.layer.shadowRadius = 3
+        
+        // Set initial divider frame
+        dividerView.frame = CGRect(x: 0, y: 0, width: 2, height: bounds.height)
 
-        grabHandle.layer.cornerRadius = 10
+        // Setup touch area
+        touchAreaView.backgroundColor = .clear
+        touchAreaView.isUserInteractionEnabled = true
+
+        // Style the grab handle
+        grabHandle.layer.cornerRadius = 12
         grabHandle.layer.cornerCurve = .continuous
         grabHandle.backgroundColor = .white
-        dividerView.addSubview(grabHandle)
-
+        grabHandle.layer.shadowColor = UIColor.black.cgColor
+        grabHandle.layer.shadowOpacity = 0.2
+        grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
+        grabHandle.layer.shadowRadius = 4
+        
+        // Add a subtle border to make it more visible
+        grabHandle.layer.borderWidth = 1
+        grabHandle.layer.borderColor = UIColor.black.withAlphaComponent(0.1).cgColor
+        grabHandle.isUserInteractionEnabled = false
+        
+        touchAreaView.addSubview(grabHandle)
+        
+        // Set initial frames
+        beforeImageView.frame = bounds
+        afterImageView.frame = bounds
+        
+        // Position touch area centered on divider
+        let touchAreaSize = CGSize(width: 64, height: 80)
+        touchAreaView.frame = CGRect(
+            x: -touchAreaSize.width/2,
+            y: (bounds.height - touchAreaSize.height)/2,
+            width: touchAreaSize.width,
+            height: touchAreaSize.height
+        )
+        
+        // Position grab handle centered in touch area
+        let handleSize = CGSize(width: 24, height: 40)
+        grabHandle.frame = CGRect(
+            x: (touchAreaSize.width - handleSize.width)/2,
+            y: (touchAreaSize.height - handleSize.height)/2,
+            width: handleSize.width,
+            height: handleSize.height
+        )
+        
         maskLayer.frame = bounds
         updateMask(x: bounds.midX)
         afterImageView.layer.mask = maskLayer
+    }
+
+    private func updateDividerPosition() {
+        let x = bounds.width * dividerPosition
+        dividerView.frame = CGRect(x: x - 1, y: 0, width: 2, height: bounds.height)
+        
+        // Update touch area position to stay centered
+        let touchAreaSize = CGSize(width: 64, height: 80)
+        touchAreaView.frame = CGRect(
+            x: x - touchAreaSize.width/2,
+            y: (bounds.height - touchAreaSize.height)/2,
+            width: touchAreaSize.width,
+            height: touchAreaSize.height
+        )
+        
+        updateMask(x: x)
     }
 
     public override func layoutSubviews() {
@@ -58,30 +124,65 @@ public class RSBeforeAfterImageView: UIView {
         beforeImageView.frame = bounds
         afterImageView.frame = bounds
         
-        // Update divider position
-        dividerView.frame = CGRect(x: bounds.midX - 1, y: 0, width: 2, height: bounds.height)
+        // Only reset divider position if bounds actually changed
+        if bounds != previousBounds {
+            updateDividerPosition()
+            previousBounds = bounds
+        }
         
-        // Update grab handle position
-        grabHandle.frame = CGRect(x: -10, y: bounds.midY - 25, width: 20, height: 50)
-        
-        // Update mask layer frame and path
+        // Update mask layer frame
         maskLayer.frame = bounds
-        updateMask(x: dividerView.center.x)
     }
 
     private func addPanGesture() {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        dividerView.addGestureRecognizer(pan)
+        pan.delegate = self
+        pan.maximumNumberOfTouches = 1
+        pan.minimumNumberOfTouches = 1
+        pan.cancelsTouchesInView = false
+        touchAreaView.addGestureRecognizer(pan)
+    }
+    
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        print("Tap detected on handle")
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: self)
-        var newX = dividerView.center.x + translation.x
-        newX = max(0, min(bounds.width, newX))
-        gesture.setTranslation(.zero, in: self)
-
-        dividerView.center.x = newX
-        updateMask(x: newX)
+        //print("Gesture state: \(gesture.state.rawValue)")
+        
+        switch gesture.state {
+        case .began:
+            print("Gesture began")
+            UIView.animate(withDuration: 0.1) {
+                self.grabHandle.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+                self.grabHandle.backgroundColor = UIColor.white.withAlphaComponent(0.95)
+                self.grabHandle.layer.shadowOpacity = 0.4
+                self.grabHandle.layer.shadowRadius = 6
+                self.grabHandle.layer.shadowOffset = CGSize(width: 0, height: 3)
+                self.grabHandle.layer.borderWidth = 1.5
+            }
+        case .changed:
+            let translation = gesture.translation(in: self)
+            let newX = dividerView.center.x + translation.x
+            dividerPosition = newX / bounds.width
+            gesture.setTranslation(.zero, in: self)
+        case .ended, .cancelled, .failed:
+            print("Gesture ended/cancelled/failed")
+            resetHandleAppearance()
+        case .possible:
+            print("Gesture possible")
+        }
+    }
+    
+    private func resetHandleAppearance() {
+        UIView.animate(withDuration: 0.2) {
+            self.grabHandle.transform = .identity
+            self.grabHandle.backgroundColor = .white
+            self.grabHandle.layer.shadowOpacity = 0.2
+            self.grabHandle.layer.shadowRadius = 4
+            self.grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
+            self.grabHandle.layer.borderWidth = 1
+        }
     }
 
     private func updateMask(x: CGFloat) {
@@ -93,5 +194,13 @@ public class RSBeforeAfterImageView: UIView {
     public func configure(before: UIImage, after: UIImage) {
         beforeImageView.image = before
         afterImageView.image = after
+    }
+}
+
+// Add UIGestureRecognizerDelegate to handle gesture recognition
+extension RSBeforeAfterImageView: UIGestureRecognizerDelegate {
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        print("Should receive touch: \(touch.location(in: self))")
+        return true
     }
 }

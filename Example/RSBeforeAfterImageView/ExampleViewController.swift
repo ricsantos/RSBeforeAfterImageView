@@ -56,6 +56,11 @@ class ExampleViewController: UIViewController {
         assert(false)
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        print("ExampleViewController.viewDidAppear")
+    }
+    
     func loadBeforeAfterAssets() {
         self.beforeAfterImageView.configure(
             before: UIImage(named: "r33_before")!,
