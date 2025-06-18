@@ -27,6 +27,27 @@ public class RSBeforeAfterImageView: UIView {
         }
     }
     
+    /// Sets the position of the divider
+    /// - Parameters:
+    ///   - position: The normalized position (0.0 to 1.0)
+    ///   - animated: Whether to animate the change
+    ///   - duration: The duration of the animation in seconds
+    ///   - completion: A closure to be called when the animation completes
+    public func setDividerPosition(_ position: CGFloat, animated: Bool = true, duration: TimeInterval = 0.5, completion: (() -> Void)? = nil) {
+        let newPosition = max(0.0, min(1.0, position))
+        
+        if animated {
+            UIView.animate(withDuration: duration, delay: 0.0, options: .curveEaseInOut, animations: {
+                self.dividerPosition = newPosition
+            }, completion: { _ in
+                completion?()
+            })
+        } else {
+            dividerPosition = newPosition
+            completion?()
+        }
+    }
+    
     /// The size of the grab handle
     public var grabHandleSize: CGSize = CGSize(width: 24, height: 40) {
         didSet {

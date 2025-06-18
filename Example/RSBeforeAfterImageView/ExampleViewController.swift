@@ -54,6 +54,8 @@ class ExampleViewController: UIViewController {
         self.beforeAfterImageView.grabHandleCornerRadius = 18
         self.beforeAfterImageView.grabHandleBackgroundStyle = .blur(.regular)
         self.beforeAfterImageView.grabHandleIcon = UIImage(systemName: "arrowtriangle.left.and.line.vertical.and.arrowtriangle.right.fill")
+    
+        self.beforeAfterImageView.setDividerPosition(0.0, animated: false)
     }
 
     override func didReceiveMemoryWarning() {
@@ -64,6 +66,13 @@ class ExampleViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         print("ExampleViewController.viewDidAppear")
+
+        self.beforeAfterImageView.setDividerPosition(0.8, animated: true, duration: 0.6) {
+            print("Divider position set to 1.0")
+            self.beforeAfterImageView.setDividerPosition(0.5, animated: true, duration: 0.3) {
+                print("Divider position set to 0.5")
+            }
+        }
     }
     
     func loadBeforeAfterAssets() {
