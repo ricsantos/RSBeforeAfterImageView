@@ -53,6 +53,7 @@ class ExampleViewController: UIViewController {
         self.beforeAfterImageView.grabHandleSize = CGSize(width: 36, height: 36)
         self.beforeAfterImageView.grabHandleCornerRadius = 18
         self.beforeAfterImageView.grabHandleBackgroundStyle = .blur(.regular)
+        self.beforeAfterImageView.grabHandleIcon = UIImage(systemName: "arrowtriangle.left.and.line.vertical.and.arrowtriangle.right.fill")
     }
 
     override func didReceiveMemoryWarning() {

@@ -14,6 +14,7 @@ public class RSBeforeAfterImageView: UIView {
     private let dividerView = UIView()
     private let touchAreaView = UIView()
     private let grabHandle = UIView()
+    private let grabHandleIconView = UIImageView()
     private var maskLayer = CAShapeLayer()
     private var previousBounds: CGRect = .zero
     private var blurView: UIVisualEffectView?
@@ -49,6 +50,20 @@ public class RSBeforeAfterImageView: UIView {
     
     /// The border width of the grab handle
     public var grabHandleBorderWidth: CGFloat = 1.0 {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The icon image for the grab handle
+    public var grabHandleIcon: UIImage? {
+        didSet {
+            updateGrabHandleAppearance()
+        }
+    }
+    
+    /// The tint color for the grab handle icon
+    public var grabHandleIconTintColor: UIColor = .white {
         didSet {
             updateGrabHandleAppearance()
         }
@@ -104,6 +119,21 @@ public class RSBeforeAfterImageView: UIView {
             
             grabHandle.backgroundColor = .clear
         }
+        
+        // Update icon
+        grabHandleIconView.image = grabHandleIcon
+        grabHandleIconView.tintColor = grabHandleIconTintColor
+        grabHandleIconView.isHidden = grabHandleIcon == nil
+        if grabHandleIcon != nil {
+            let inset: CGFloat = 4
+            grabHandleIconView.frame = CGRect(
+                x: inset,
+                y: inset,
+                width: grabHandle.bounds.width - (inset * 2),
+                height: grabHandle.bounds.height - (inset * 2)
+            )
+            grabHandleIconView.contentMode = .scaleAspectFit
+        }
     }
 
     override init(frame: CGRect) {
@@ -146,6 +176,11 @@ public class RSBeforeAfterImageView: UIView {
         grabHandle.layer.shadowOffset = CGSize(width: 0, height: 2)
         grabHandle.layer.shadowRadius = 4
         grabHandle.isUserInteractionEnabled = false
+        
+        // Setup icon view
+        grabHandleIconView.contentMode = .scaleAspectFit
+        grabHandleIconView.isHidden = true
+        grabHandle.addSubview(grabHandleIconView)
         
         touchAreaView.addSubview(grabHandle)
         
