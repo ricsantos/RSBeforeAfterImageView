@@ -181,6 +181,11 @@ public class RSBeforeAfterImageView: UIView {
         }
     }
 
+    public func cancelAnimations() {
+        self.layer.removeAllAnimations()
+        maskLayer.removeAllAnimations()
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupViews()
