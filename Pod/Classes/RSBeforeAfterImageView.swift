@@ -25,7 +25,8 @@ public class RSBeforeAfterImageView: UIView {
     private var dividerPosition: CGFloat = 0.5 {
         didSet {
             dividerPosition = max(0.0, min(1.0, dividerPosition))
-            updateDividerPosition()
+            updateDividerLayout()
+            self.setNeedsLayout()
         }
     }
     
@@ -251,11 +252,11 @@ public class RSBeforeAfterImageView: UIView {
         updateGrabHandleAppearance()
         
         maskLayer.frame = bounds
-        updateMask(x: bounds.midX)
+        updateMaskLayout(x: bounds.midX)
         topImageView.layer.mask = maskLayer
     }
 
-    private func updateDividerPosition() {
+    private func updateDividerLayout() {
         let x = bounds.width * dividerPosition
         dividerView.frame = CGRect(x: x - 1, y: 0, width: 2, height: bounds.height)
         
@@ -268,7 +269,7 @@ public class RSBeforeAfterImageView: UIView {
             height: touchAreaSize.height
         )
         
-        updateMask(x: x)
+        self.updateMaskLayout(x: x)
     }
 
     public override func layoutSubviews() {
@@ -280,7 +281,7 @@ public class RSBeforeAfterImageView: UIView {
         
         // Only reset divider position if bounds actually changed
         if bounds != previousBounds {
-            updateDividerPosition()
+            updateDividerLayout()
             previousBounds = bounds
         }
         
@@ -329,7 +330,7 @@ public class RSBeforeAfterImageView: UIView {
         }
     }
 
-    private func updateMask(x: CGFloat) {
+    private func updateMaskLayout(x: CGFloat) {
         let path = UIBezierPath(rect: CGRect(x: 0, y: 0, width: x, height: bounds.height))
         maskLayer.path = path.cgPath
     }
