@@ -13,7 +13,7 @@ public class RSBeforeAfterImageView: UIView {
     public let bottomImageView = UIImageView()
     /// The top image, will be visible when the divider is to the right
     public let topImageView = UIImageView()
-    private let dividerView = UIView()
+    public let dividerView = UIView()
     private let touchAreaView = UIView()
     private let grabHandle = UIView()
     private let grabHandleIconView = UIImageView()
