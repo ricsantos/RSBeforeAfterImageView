@@ -198,7 +198,9 @@ public class RSBeforeAfterImageView: UIView {
     }
 
     private func setupViews() {
+        bottomImageView.clipsToBounds = true
         bottomImageView.contentMode = .scaleAspectFill
+        topImageView.clipsToBounds = true
         topImageView.contentMode = .scaleAspectFill
 
         addSubview(bottomImageView)
