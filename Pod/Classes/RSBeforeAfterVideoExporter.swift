@@ -49,6 +49,11 @@ public enum EasingFunction {
     }
 }
 
+public enum ExportMode {
+    case plain   // Match input image aspect ratio, no background
+    case social  // 9:16 canvas with RSBeforeAfterImageView centered
+}
+
 public struct VideoExportSegment {
     public let position: CGFloat
     public let duration: TimeInterval
@@ -71,15 +76,15 @@ public class RSBeforeAfterVideoExporter {
     }
     
     private let frameRate: Int32 = 30
-    private let videoSize: CGSize
     
-    public init(videoSize: CGSize = CGSize(width: 1080, height: 1080)) {
-        self.videoSize = videoSize
+    public init() {
+        // No longer need to store videoSize as it's calculated per export
     }
     
     public func exportVideo(
         beforeImage: UIImage,
         afterImage: UIImage,
+        mode: ExportMode,
         startingPosition: CGFloat = 0.0,
         segments: [VideoExportSegment],
         outputURL: URL,
@@ -95,6 +100,7 @@ public class RSBeforeAfterVideoExporter {
                 let url = try self.generateVideo(
                     beforeImage: beforeImage,
                     afterImage: afterImage,
+                    mode: mode,
                     startingPosition: startingPosition,
                     segments: segments,
                     outputURL: outputURL
@@ -117,10 +123,14 @@ public class RSBeforeAfterVideoExporter {
     private func generateVideo(
         beforeImage: UIImage,
         afterImage: UIImage,
+        mode: ExportMode,
         startingPosition: CGFloat,
         segments: [VideoExportSegment],
         outputURL: URL
     ) throws -> URL {
+        
+        // Calculate video size based on mode and input images
+        let videoSize = calculateVideoSize(for: mode, inputImage: beforeImage)
         
         // Remove existing file if it exists
         if FileManager.default.fileExists(atPath: outputURL.path) {
@@ -168,7 +178,12 @@ public class RSBeforeAfterVideoExporter {
         videoWriter.startSession(atSourceTime: .zero)
         
         // Create offscreen view for rendering
-        let offscreenView = createOffscreenView(beforeImage: beforeImage, afterImage: afterImage)
+        let offscreenView = createOffscreenView(
+            beforeImage: beforeImage, 
+            afterImage: afterImage, 
+            mode: mode, 
+            videoSize: videoSize
+        )
         
         // Generate frames
         try generateFrames(
@@ -201,8 +216,57 @@ public class RSBeforeAfterVideoExporter {
         return outputURL
     }
     
-    private func createOffscreenView(beforeImage: UIImage, afterImage: UIImage) -> RSBeforeAfterImageView {
-        let view = RSBeforeAfterImageView(frame: CGRect(origin: .zero, size: videoSize))
+    private func calculateVideoSize(for mode: ExportMode, inputImage: UIImage) -> CGSize {
+        switch mode {
+        case .plain:
+            // Match input image aspect ratio
+            let inputSize = inputImage.size
+            let aspectRatio = inputSize.width / inputSize.height
+            
+            // Target 720p-ish resolution, maintaining aspect ratio
+            let targetWidth: CGFloat = 720
+            let calculatedHeight = targetWidth / aspectRatio
+            
+            return CGSize(width: targetWidth, height: calculatedHeight)
+            
+        case .social:
+            // Fixed 9:16 aspect ratio for social media (1080x1920)
+            return CGSize(width: 1080, height: 1920)
+        }
+    }
+    
+    private func createOffscreenView(
+        beforeImage: UIImage, 
+        afterImage: UIImage, 
+        mode: ExportMode, 
+        videoSize: CGSize
+    ) -> UIView {
+        
+        switch mode {
+        case .plain:
+            // Direct RSBeforeAfterImageView, full frame
+            return createPlainOffscreenView(
+                beforeImage: beforeImage, 
+                afterImage: afterImage, 
+                size: videoSize
+            )
+            
+        case .social:
+            // Container view with orange background and centered RSBeforeAfterImageView
+            return createSocialOffscreenView(
+                beforeImage: beforeImage, 
+                afterImage: afterImage, 
+                canvasSize: videoSize
+            )
+        }
+    }
+    
+    private func createPlainOffscreenView(
+        beforeImage: UIImage, 
+        afterImage: UIImage, 
+        size: CGSize
+    ) -> RSBeforeAfterImageView {
+        let view = RSBeforeAfterImageView(frame: CGRect(origin: .zero, size: size))
         view.configure(before: beforeImage, after: afterImage)
         
         // Force layout
@@ -212,19 +276,74 @@ public class RSBeforeAfterVideoExporter {
         return view
     }
     
+    private func createSocialOffscreenView(
+        beforeImage: UIImage, 
+        afterImage: UIImage, 
+        canvasSize: CGSize
+    ) -> UIView {
+        // Create container view with orange background
+        let containerView = UIView(frame: CGRect(origin: .zero, size: canvasSize))
+        containerView.backgroundColor = UIColor.systemOrange
+        
+        // Calculate RSBeforeAfterImageView size and position
+        let inputAspectRatio = beforeImage.size.width / beforeImage.size.height
+        let maxWidth = canvasSize.width * 0.8 // 80% of canvas width
+        let maxHeight = canvasSize.height * 0.6 // 60% of canvas height
+        
+        let viewWidth: CGFloat
+        let viewHeight: CGFloat
+        
+        // Scale to fit within max bounds while preserving aspect ratio
+        let widthBasedHeight = maxWidth / inputAspectRatio
+        let heightBasedWidth = maxHeight * inputAspectRatio
+        
+        if widthBasedHeight <= maxHeight {
+            viewWidth = maxWidth
+            viewHeight = widthBasedHeight
+        } else {
+            viewWidth = heightBasedWidth
+            viewHeight = maxHeight
+        }
+        
+        // Center the RSBeforeAfterImageView in the canvas
+        let x = (canvasSize.width - viewWidth) / 2
+        let y = (canvasSize.height - viewHeight) / 2
+        
+        let beforeAfterView = RSBeforeAfterImageView(frame: CGRect(
+            x: x, y: y, width: viewWidth, height: viewHeight
+        ))
+        beforeAfterView.configure(before: beforeImage, after: afterImage)
+        
+        containerView.addSubview(beforeAfterView)
+        
+        // Force layout
+        containerView.setNeedsLayout()
+        containerView.layoutIfNeeded()
+        beforeAfterView.setNeedsLayout()
+        beforeAfterView.layoutIfNeeded()
+        
+        return containerView
+    }
+    
     private func generateFrames(
-        offscreenView: RSBeforeAfterImageView,
+        offscreenView: UIView,
         startingPosition: CGFloat,
         segments: [VideoExportSegment],
         pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor,
         videoWriterInput: AVAssetWriterInput
     ) throws {
         
+        // Find the RSBeforeAfterImageView within the offscreen view
+        let beforeAfterView = findBeforeAfterImageView(in: offscreenView)
+        guard let beforeAfterView = beforeAfterView else {
+            throw ExportError.exportFailed("Could not find RSBeforeAfterImageView in offscreen view")
+        }
+        
         var currentTime: CMTime = .zero
         var currentPosition = startingPosition
         
         // Set initial position
-        offscreenView.setDividerPosition(currentPosition, animated: false)
+        beforeAfterView.setDividerPosition(currentPosition, animated: false)
         
         for segment in segments {
             let segmentFrameCount = Int(segment.duration * Double(frameRate))
@@ -250,11 +369,13 @@ public class RSBeforeAfterVideoExporter {
                 let framePosition = startPos + (positionDelta * easedTime)
                 
                 // Update view position (without animation for offscreen rendering)
-                offscreenView.setDividerPosition(framePosition, animated: false)
+                beforeAfterView.setDividerPosition(framePosition, animated: false)
                 
                 // Force layout update
                 offscreenView.setNeedsLayout()
                 offscreenView.layoutIfNeeded()
+                beforeAfterView.setNeedsLayout()
+                beforeAfterView.layoutIfNeeded()
                 
                 // Render frame to pixel buffer
                 guard let pixelBuffer = createPixelBuffer(from: offscreenView, 
@@ -275,7 +396,21 @@ public class RSBeforeAfterVideoExporter {
         }
     }
     
-    private func createPixelBuffer(from view: RSBeforeAfterImageView, 
+    private func findBeforeAfterImageView(in view: UIView) -> RSBeforeAfterImageView? {
+        if let beforeAfterView = view as? RSBeforeAfterImageView {
+            return beforeAfterView
+        }
+        
+        for subview in view.subviews {
+            if let found = findBeforeAfterImageView(in: subview) {
+                return found
+            }
+        }
+        
+        return nil
+    }
+    
+    private func createPixelBuffer(from view: UIView, 
                                  pixelBufferPool: CVPixelBufferPool?) -> CVPixelBuffer? {
         
         guard let pool = pixelBufferPool else {
@@ -296,8 +431,8 @@ public class RSBeforeAfterVideoExporter {
         
         let context = CGContext(
             data: pixelData,
-            width: Int(videoSize.width),
-            height: Int(videoSize.height),
+            width: Int(view.bounds.width),
+            height: Int(view.bounds.height),
             bitsPerComponent: 8,
             bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
             space: rgbColorSpace,
@@ -310,7 +445,7 @@ public class RSBeforeAfterVideoExporter {
         }
         
         // Flip coordinate system to match UIView
-        cgContext.translateBy(x: 0, y: videoSize.height)
+        cgContext.translateBy(x: 0, y: view.bounds.height)
         cgContext.scaleBy(x: 1.0, y: -1.0)
         
         // Render view to context

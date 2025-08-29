@@ -108,6 +108,29 @@ class ExampleViewController: UIViewController {
             return
         }
         
+        // Show action sheet to select export mode
+        let actionSheet = UIAlertController(title: "Export Video", message: "Choose export format", preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: "Plain Video", style: .default) { _ in
+            self.exportVideo(beforeImage: beforeImage, afterImage: afterImage, mode: .plain)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Social Media Video", style: .default) { _ in
+            self.exportVideo(beforeImage: beforeImage, afterImage: afterImage, mode: .social)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // iPad support
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = exportButton
+            popover.sourceRect = exportButton.bounds
+        }
+        
+        present(actionSheet, animated: true)
+    }
+    
+    private func exportVideo(beforeImage: UIImage, afterImage: UIImage, mode: ExportMode) {
         // Show loading state
         exportButton.isEnabled = false
         exportButton.setTitle("Exporting...", for: .normal)
@@ -125,14 +148,16 @@ class ExampleViewController: UIViewController {
         
         // Create output URL in Documents directory
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let outputURL = documentsPath.appendingPathComponent("before_after_export_\(Date().timeIntervalSince1970).mp4")
+        let modeString = mode == .plain ? "plain" : "social"
+        let outputURL = documentsPath.appendingPathComponent("before_after_\(modeString)_\(Date().timeIntervalSince1970).mp4")
         
         // Create exporter and start export
-        let exporter = RSBeforeAfterVideoExporter(videoSize: CGSize(width: 720, height: 720))
+        let exporter = RSBeforeAfterVideoExporter()
         
         exporter.exportVideo(
             beforeImage: beforeImage,
             afterImage: afterImage,
+            mode: mode,
             startingPosition: 0.0,
             segments: segments,
             outputURL: outputURL
