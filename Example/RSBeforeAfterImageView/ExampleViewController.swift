@@ -9,9 +9,11 @@
 import UIKit
 import RSBeforeAfterImageView
 import SnapKit
+import AVKit
 
 class ExampleViewController: UIViewController {
     var beforeAfterImageView: RSBeforeAfterImageView!
+    var exportButton: UIButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,10 +41,27 @@ class ExampleViewController: UIViewController {
             make.height.equalTo(self.beforeAfterImageView.snp.width).dividedBy(imageAspectRatio)
         }
         
+        // Add Export Video button
+        self.exportButton = UIButton(type: .system)
+        self.exportButton.setTitle("Export Video", for: .normal)
+        self.exportButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        self.exportButton.backgroundColor = UIColor.systemBlue
+        self.exportButton.setTitleColor(.white, for: .normal)
+        self.exportButton.layer.cornerRadius = 12
+        self.exportButton.addTarget(self, action: #selector(exportVideoTapped), for: .touchUpInside)
+        self.view.addSubview(self.exportButton)
+        
+        self.exportButton.snp.makeConstraints { make in
+            make.top.equalTo(self.beforeAfterImageView.snp.bottom).offset(24)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(200)
+            make.height.equalTo(50)
+        }
+        
         let bottomSpacer = UIView()
         self.view.addSubview(bottomSpacer)
         bottomSpacer.snp.makeConstraints { make in
-            make.top.equalTo(self.beforeAfterImageView.snp.bottom)
+            make.top.equalTo(self.exportButton.snp.bottom)
             make.bottom.equalTo(self.view.safeAreaLayoutGuide.snp.bottom)
             make.height.greaterThanOrEqualTo(8)
             make.height.equalTo(topSpacer).priority(.high)
@@ -80,5 +99,75 @@ class ExampleViewController: UIViewController {
             before: UIImage(named: "r33_before")!,
             after: UIImage(named: "r33_after")!
         )
+    }
+    
+    @objc func exportVideoTapped() {
+        guard let beforeImage = UIImage(named: "r33_before"),
+              let afterImage = UIImage(named: "r33_after") else {
+            showAlert(title: "Error", message: "Could not load images")
+            return
+        }
+        
+        // Show loading state
+        exportButton.isEnabled = false
+        exportButton.setTitle("Exporting...", for: .normal)
+        exportButton.backgroundColor = UIColor.systemGray
+        
+        // Create video segments with animation
+        let segments = [
+            VideoExportSegment(position: 0.0, duration: 1.0),   // Start at left
+            VideoExportSegment(position: 1.0, duration: 2.0),   // Slide to right over 2 seconds
+            VideoExportSegment(position: 0.5, duration: 1.0),   // Back to center
+            VideoExportSegment(position: 0.8, duration: 1.5),   // To 80%
+            VideoExportSegment(position: 0.2, duration: 1.5)    // To 20%
+        ]
+        
+        // Create output URL in Documents directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let outputURL = documentsPath.appendingPathComponent("before_after_export_\(Date().timeIntervalSince1970).mp4")
+        
+        // Create exporter and start export
+        let exporter = RSBeforeAfterVideoExporter(videoSize: CGSize(width: 720, height: 720))
+        
+        exporter.exportVideo(
+            beforeImage: beforeImage,
+            afterImage: afterImage,
+            startingPosition: 0.0,
+            segments: segments,
+            outputURL: outputURL
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.resetExportButton()
+                
+                switch result {
+                case .success(let videoURL):
+                    self?.playVideo(at: videoURL)
+                case .failure(let error):
+                    self?.showAlert(title: "Export Failed", message: error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    private func resetExportButton() {
+        exportButton.isEnabled = true
+        exportButton.setTitle("Export Video", for: .normal)
+        exportButton.backgroundColor = UIColor.systemBlue
+    }
+    
+    private func playVideo(at url: URL) {
+        let player = AVPlayer(url: url)
+        let playerViewController = AVPlayerViewController()
+        playerViewController.player = player
+        
+        present(playerViewController, animated: true) {
+            player.play()
+        }
+    }
+    
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

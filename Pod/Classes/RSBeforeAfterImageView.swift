@@ -1,6 +1,5 @@
 //
-//  BeforeAfterView.swift
-//  Pixelfix
+//  RSBeforeAfterImageView.swift
 //
 //  Created by Ric Santos on 13/5/2025.
 //
