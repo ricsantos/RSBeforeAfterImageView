@@ -136,6 +136,9 @@ class ExampleViewController: UIViewController {
         exportButton.setTitle("Exporting...", for: .normal)
         exportButton.backgroundColor = UIColor.systemGray
         
+        // Record start time for duration tracking
+        let exportStartTime = Date()
+        
         // Create video segments with smooth easing animations
         let segments = [
             VideoExportSegment(position: 0.0, duration: 0.8, easing: .easeOut),        // Start at left with ease out
@@ -167,7 +170,12 @@ class ExampleViewController: UIViewController {
                 
                 switch result {
                 case .success(let videoURL):
-                    self?.playVideo(at: videoURL)
+                    let exportDuration = Date().timeIntervalSince(exportStartTime)
+                    let videoDuration = segments.reduce(0) { $0 + $1.duration }
+                    print("Export complete: \(videoURL)")
+                    print(" - export time: \(String(format: "%.2f", exportDuration)) seconds")
+                    print(" - video duration: \(String(format: "%.2f", videoDuration)) seconds")
+                    self?.showPostExportOptions(for: videoURL)
                 case .failure(let error):
                     self?.showAlert(title: "Export Failed", message: error.localizedDescription)
                 }
@@ -181,6 +189,29 @@ class ExampleViewController: UIViewController {
         exportButton.backgroundColor = UIColor.systemBlue
     }
     
+    private func showPostExportOptions(for videoURL: URL) {
+        let actionSheet = UIAlertController(title: "Video Exported", message: "What would you like to do with your video?", preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: "View", style: .default) { _ in
+            self.playVideo(at: videoURL)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Share", style: .default) { _ in
+            self.shareVideo(at: videoURL)
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // iPad support
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(actionSheet, animated: true)
+    }
+    
     private func playVideo(at url: URL) {
         let player = AVPlayer(url: url)
         let playerViewController = AVPlayerViewController()
@@ -189,6 +220,19 @@ class ExampleViewController: UIViewController {
         present(playerViewController, animated: true) {
             player.play()
         }
+    }
+    
+    private func shareVideo(at url: URL) {
+        let activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        
+        // iPad support
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(activityViewController, animated: true)
     }
     
     private func showAlert(title: String, message: String) {
