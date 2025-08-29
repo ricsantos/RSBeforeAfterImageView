@@ -8,13 +8,56 @@ import UIKit
 import AVFoundation
 import CoreGraphics
 
+public enum EasingFunction {
+    case linear
+    case easeInOut
+    case easeIn
+    case easeOut
+    case easeInBack
+    case easeOutBack
+    case easeInOutBack
+    
+    func apply(to t: CGFloat) -> CGFloat {
+        let clampedT = max(0.0, min(1.0, t))
+        
+        switch self {
+        case .linear:
+            return clampedT
+        case .easeInOut:
+            return clampedT < 0.5 
+                ? 2.0 * clampedT * clampedT 
+                : 1.0 - pow(-2.0 * clampedT + 2.0, 3.0) / 2.0
+        case .easeIn:
+            return clampedT * clampedT
+        case .easeOut:
+            return 1.0 - (1.0 - clampedT) * (1.0 - clampedT)
+        case .easeInBack:
+            let c1: CGFloat = 1.70158
+            let c3: CGFloat = c1 + 1.0
+            return c3 * clampedT * clampedT * clampedT - c1 * clampedT * clampedT
+        case .easeOutBack:
+            let c1: CGFloat = 1.70158
+            let c3: CGFloat = c1 + 1.0
+            return 1.0 + c3 * pow(clampedT - 1.0, 3.0) + c1 * pow(clampedT - 1.0, 2.0)
+        case .easeInOutBack:
+            let c1: CGFloat = 1.70158
+            let c2: CGFloat = c1 * 1.525
+            return clampedT < 0.5
+                ? (pow(2.0 * clampedT, 2.0) * ((c2 + 1.0) * 2.0 * clampedT - c2)) / 2.0
+                : (pow(2.0 * clampedT - 2.0, 2.0) * ((c2 + 1.0) * (clampedT * 2.0 - 2.0) + c2) + 2.0) / 2.0
+        }
+    }
+}
+
 public struct VideoExportSegment {
     public let position: CGFloat
     public let duration: TimeInterval
+    public let easing: EasingFunction
     
-    public init(position: CGFloat, duration: TimeInterval) {
+    public init(position: CGFloat, duration: TimeInterval, easing: EasingFunction = .easeInOut) {
         self.position = max(0.0, min(1.0, position))
         self.duration = duration
+        self.easing = easing
     }
 }
 
@@ -189,7 +232,7 @@ public class RSBeforeAfterVideoExporter {
             
             let startPos = currentPosition
             let endPos = segment.position
-            let positionDelta = (endPos - startPos) / CGFloat(segmentFrameCount)
+            let positionDelta = endPos - startPos
             
             for frameIndex in 0..<segmentFrameCount {
                 // Wait for writer to be ready
@@ -197,8 +240,14 @@ public class RSBeforeAfterVideoExporter {
                     Thread.sleep(forTimeInterval: 0.01)
                 }
                 
-                // Calculate current position for this frame
-                let framePosition = startPos + (positionDelta * CGFloat(frameIndex))
+                // Calculate normalized time for this frame (0.0 to 1.0)
+                let normalizedTime = CGFloat(frameIndex) / CGFloat(segmentFrameCount)
+                
+                // Apply easing function to get smooth interpolation
+                let easedTime = segment.easing.apply(to: normalizedTime)
+                
+                // Calculate current position using eased interpolation
+                let framePosition = startPos + (positionDelta * easedTime)
                 
                 // Update view position (without animation for offscreen rendering)
                 offscreenView.setDividerPosition(framePosition, animated: false)

@@ -113,13 +113,14 @@ class ExampleViewController: UIViewController {
         exportButton.setTitle("Exporting...", for: .normal)
         exportButton.backgroundColor = UIColor.systemGray
         
-        // Create video segments with animation
+        // Create video segments with smooth easing animations
         let segments = [
-            VideoExportSegment(position: 0.0, duration: 1.0),   // Start at left
-            VideoExportSegment(position: 1.0, duration: 2.0),   // Slide to right over 2 seconds
-            VideoExportSegment(position: 0.5, duration: 1.0),   // Back to center
-            VideoExportSegment(position: 0.8, duration: 1.5),   // To 80%
-            VideoExportSegment(position: 0.2, duration: 1.5)    // To 20%
+            VideoExportSegment(position: 0.0, duration: 0.8, easing: .easeOut),        // Start at left with ease out
+            VideoExportSegment(position: 1.0, duration: 2.5, easing: .easeInOut),      // Slide to right smoothly
+            VideoExportSegment(position: 0.5, duration: 1.2, easing: .easeInOutBack),  // Back to center with bounce
+            VideoExportSegment(position: 0.8, duration: 1.0, easing: .easeInOut),      // To 80% smoothly
+            VideoExportSegment(position: 0.2, duration: 1.5, easing: .easeInOut),      // To 20% smoothly
+            VideoExportSegment(position: 0.5, duration: 0.8, easing: .easeIn)          // End at center
         ]
         
         // Create output URL in Documents directory
