@@ -331,6 +331,12 @@ public class RSBeforeAfterVideoExporter {
         var currentTime: CMTime = .zero
         var currentPosition = startingPosition
         
+        // Calculate total frames for progress tracking
+        let totalFrames = segments.reduce(0) { sum, segment in
+            sum + Int(segment.duration * Double(frameRate))
+        }
+        var processedFrames = 0
+        
         beforeAfterView.setDividerPosition(currentPosition, animated: false)
         
         for segment in segments {
@@ -371,6 +377,13 @@ public class RSBeforeAfterVideoExporter {
                 }
                 
                 currentTime = CMTimeAdd(currentTime, frameDuration)
+                processedFrames += 1
+                
+                // Print progress every 10 frames to avoid spam
+                if processedFrames % 10 == 0 || processedFrames == totalFrames {
+                    let progress = (Double(processedFrames) / Double(totalFrames)) * 100
+                    print("Export progress: \(Int(progress))%")
+                }
             }
             
             currentPosition = segment.position
