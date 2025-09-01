@@ -95,28 +95,20 @@ public class RSBeforeAfterVideoExporter {
             return
         }
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let url = try self.generateVideo(
-                    beforeImage: beforeImage,
-                    afterImage: afterImage,
-                    mode: mode,
-                    startingPosition: startingPosition,
-                    segments: segments,
-                    outputURL: outputURL
-                )
-                DispatchQueue.main.async {
-                    completion(.success(url))
-                }
-            } catch let error as ExportError {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(.failure(.exportFailed(error.localizedDescription)))
-                }
-            }
+        do {
+            let url = try self.generateVideo(
+                beforeImage: beforeImage,
+                afterImage: afterImage,
+                mode: mode,
+                startingPosition: startingPosition,
+                segments: segments,
+                outputURL: outputURL
+            )
+            completion(.success(url))
+        } catch let error as ExportError {
+            completion(.failure(error))
+        } catch {
+            completion(.failure(.exportFailed(error.localizedDescription)))
         }
     }
     
@@ -266,17 +258,13 @@ public class RSBeforeAfterVideoExporter {
         afterImage: UIImage, 
         size: CGSize
     ) -> RSBeforeAfterImageView {
-        // Create view on main thread to establish proper view hierarchy
-        return DispatchQueue.main.sync {
-            let view = RSBeforeAfterImageView(frame: CGRect(origin: .zero, size: size))
-            view.configure(before: beforeImage, after: afterImage)
-            
-            // Force initial layout on main thread
-            view.setNeedsLayout()
-            view.layoutIfNeeded()
-            
-            return view
-        }
+        let view = RSBeforeAfterImageView(frame: CGRect(origin: .zero, size: size))
+        view.configure(before: beforeImage, after: afterImage)
+        
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        
+        return view
     }
     
     private func createSocialOffscreenView(
@@ -284,51 +272,47 @@ public class RSBeforeAfterVideoExporter {
         afterImage: UIImage, 
         canvasSize: CGSize
     ) -> UIView {
-        // Create view hierarchy on main thread
-        return DispatchQueue.main.sync {
-            // Create container view with orange background
-            let containerView = UIView(frame: CGRect(origin: .zero, size: canvasSize))
-            containerView.backgroundColor = UIColor.systemOrange
-            
-            // Calculate RSBeforeAfterImageView size and position
-            let inputAspectRatio = beforeImage.size.width / beforeImage.size.height
-            let maxWidth = canvasSize.width * 0.8 // 80% of canvas width
-            let maxHeight = canvasSize.height * 0.6 // 60% of canvas height
-            
-            let viewWidth: CGFloat
-            let viewHeight: CGFloat
-            
-            // Scale to fit within max bounds while preserving aspect ratio
-            let widthBasedHeight = maxWidth / inputAspectRatio
-            let heightBasedWidth = maxHeight * inputAspectRatio
-            
-            if widthBasedHeight <= maxHeight {
-                viewWidth = maxWidth
-                viewHeight = widthBasedHeight
-            } else {
-                viewWidth = heightBasedWidth
-                viewHeight = maxHeight
-            }
-            
-            // Center the RSBeforeAfterImageView in the canvas
-            let x = (canvasSize.width - viewWidth) / 2
-            let y = (canvasSize.height - viewHeight) / 2
-            
-            let beforeAfterView = RSBeforeAfterImageView(frame: CGRect(
-                x: x, y: y, width: viewWidth, height: viewHeight
-            ))
-            beforeAfterView.configure(before: beforeImage, after: afterImage)
-            
-            containerView.addSubview(beforeAfterView)
-            
-            // Force initial layout on main thread
-            containerView.setNeedsLayout()
-            containerView.layoutIfNeeded()
-            beforeAfterView.setNeedsLayout()
-            beforeAfterView.layoutIfNeeded()
-            
-            return containerView
+        // Create container view with orange background
+        let containerView = UIView(frame: CGRect(origin: .zero, size: canvasSize))
+        containerView.backgroundColor = UIColor.systemOrange
+        
+        // Calculate RSBeforeAfterImageView size and position
+        let inputAspectRatio = beforeImage.size.width / beforeImage.size.height
+        let maxWidth = canvasSize.width * 0.8 // 80% of canvas width
+        let maxHeight = canvasSize.height * 0.6 // 60% of canvas height
+        
+        let viewWidth: CGFloat
+        let viewHeight: CGFloat
+        
+        // Scale to fit within max bounds while preserving aspect ratio
+        let widthBasedHeight = maxWidth / inputAspectRatio
+        let heightBasedWidth = maxHeight * inputAspectRatio
+        
+        if widthBasedHeight <= maxHeight {
+            viewWidth = maxWidth
+            viewHeight = widthBasedHeight
+        } else {
+            viewWidth = heightBasedWidth
+            viewHeight = maxHeight
         }
+        
+        // Center the RSBeforeAfterImageView in the canvas
+        let x = (canvasSize.width - viewWidth) / 2
+        let y = (canvasSize.height - viewHeight) / 2
+        
+        let beforeAfterView = RSBeforeAfterImageView(frame: CGRect(
+            x: x, y: y, width: viewWidth, height: viewHeight
+        ))
+        beforeAfterView.configure(before: beforeImage, after: afterImage)
+        
+        containerView.addSubview(beforeAfterView)
+        
+        containerView.setNeedsLayout()
+        containerView.layoutIfNeeded()
+        beforeAfterView.setNeedsLayout()
+        beforeAfterView.layoutIfNeeded()
+        
+        return containerView
     }
     
     private func generateFrames(
@@ -339,10 +323,7 @@ public class RSBeforeAfterVideoExporter {
         videoWriterInput: AVAssetWriterInput
     ) throws {
         
-        // Find the RSBeforeAfterImageView within the offscreen view (UI traversal must be on main thread)
-        let beforeAfterView: RSBeforeAfterImageView? = DispatchQueue.main.sync {
-            return findBeforeAfterImageView(in: offscreenView)
-        }
+        let beforeAfterView = findBeforeAfterImageView(in: offscreenView)
         guard let beforeAfterView = beforeAfterView else {
             throw ExportError.exportFailed("Could not find RSBeforeAfterImageView in offscreen view")
         }
@@ -350,10 +331,7 @@ public class RSBeforeAfterVideoExporter {
         var currentTime: CMTime = .zero
         var currentPosition = startingPosition
         
-        // Set initial position on main thread
-        DispatchQueue.main.sync {
-            beforeAfterView.setDividerPosition(currentPosition, animated: false)
-        }
+        beforeAfterView.setDividerPosition(currentPosition, animated: false)
         
         for segment in segments {
             let segmentFrameCount = Int(segment.duration * Double(frameRate))
@@ -364,9 +342,9 @@ public class RSBeforeAfterVideoExporter {
             let positionDelta = endPos - startPos
             
             for frameIndex in 0..<segmentFrameCount {
-                // Wait for writer to be ready
+                // Wait for writer to be ready (but don't use Thread.sleep)
                 while !videoWriterInput.isReadyForMoreMediaData {
-                    Thread.sleep(forTimeInterval: 0.01)
+                    RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.001))
                 }
                 
                 // Calculate normalized time for this frame (0.0 to 1.0)
@@ -378,18 +356,11 @@ public class RSBeforeAfterVideoExporter {
                 // Calculate current position using eased interpolation
                 let framePosition = startPos + (positionDelta * easedTime)
                 
-                // Batch update position and render on main thread
-                // This is unavoidable for UIKit, but we minimize the work done
-                let pixelBuffer: CVPixelBuffer? = DispatchQueue.main.sync {
-                    // Update position and immediately render - no separate layout calls
-                    beforeAfterView.setDividerPosition(framePosition, animated: false)
-                    
-                    // Render frame immediately without forcing layout (should auto-update)
-                    return createPixelBuffer(from: offscreenView, 
-                                           pixelBufferPool: pixelBufferAdaptor.pixelBufferPool)
-                }
+                // Update position and render frame directly on main thread
+                beforeAfterView.setDividerPosition(framePosition, animated: false)
                 
-                guard let buffer = pixelBuffer else {
+                guard let buffer = createPixelBuffer(from: offscreenView, 
+                                                   pixelBufferPool: pixelBufferAdaptor.pixelBufferPool) else {
                     throw ExportError.exportFailed("Failed to create pixel buffer")
                 }
                 
