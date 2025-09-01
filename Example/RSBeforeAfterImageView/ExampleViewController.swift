@@ -73,7 +73,7 @@ class ExampleViewController: UIViewController {
         self.beforeAfterImageView.grabHandleCornerRadius = 18
         self.beforeAfterImageView.grabHandleBackgroundStyle = .blur(.regular)
         self.beforeAfterImageView.grabHandleIcon = UIImage(systemName: "arrowtriangle.left.and.line.vertical.and.arrowtriangle.right.fill")
-    
+        self.beforeAfterImageView.dividerWidth = 1
         self.beforeAfterImageView.setDividerPosition(0.0, animated: false)
     }
 

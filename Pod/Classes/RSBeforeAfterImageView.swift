@@ -127,6 +127,13 @@ public class RSBeforeAfterImageView: UIView {
         }
     }
     
+    /// The width of the divider handle
+    public var dividerWidth: CGFloat = 2.0 {
+        didSet {
+            self.setNeedsLayout()
+        }
+    }
+    
     private func updateGrabHandleAppearance() {
         // Update size
         let handleSize = grabHandleSize
@@ -215,7 +222,7 @@ public class RSBeforeAfterImageView: UIView {
         dividerView.layer.shadowRadius = 3
         
         // Set initial divider frame
-        dividerView.frame = CGRect(x: 0, y: 0, width: 2, height: bounds.height)
+        dividerView.frame = CGRect(x: 0, y: 0, width: self.dividerWidth, height: bounds.height)
 
         // Setup touch area
         touchAreaView.backgroundColor = .clear
@@ -259,7 +266,7 @@ public class RSBeforeAfterImageView: UIView {
 
     private func updateDividerLayout() {
         let x = bounds.width * dividerPosition
-        dividerView.frame = CGRect(x: x - 1, y: 0, width: 2, height: bounds.height)
+        dividerView.frame = CGRect(x: x - dividerWidth/2.0, y: 0, width: dividerWidth, height: bounds.height)
         
         // Update touch area position to stay centered
         let touchAreaSize = CGSize(width: 64, height: 80)
