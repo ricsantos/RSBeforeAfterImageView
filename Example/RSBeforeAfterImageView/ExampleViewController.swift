@@ -145,13 +145,19 @@ class ExampleViewController: UIViewController {
         let exportStartTime = Date()
         
         // Create video segments with smooth easing animations
-        let segments = [
+        let segmentsOld = [
             VideoExportSegment(position: 0.0, duration: 0.8, easing: .easeOut),        // Start at left with ease out
             VideoExportSegment(position: 1.0, duration: 2.5, easing: .easeInOut),      // Slide to right smoothly
             VideoExportSegment(position: 0.5, duration: 1.2, easing: .easeInOutBack),  // Back to center with bounce
             VideoExportSegment(position: 0.8, duration: 1.0, easing: .easeInOut),      // To 80% smoothly
             VideoExportSegment(position: 0.2, duration: 1.5, easing: .easeInOut),      // To 20% smoothly
             VideoExportSegment(position: 0.5, duration: 0.8, easing: .easeIn)          // End at center
+        ]
+        
+        let segments = [
+            VideoExportSegment(position: 1.0, duration: 0.8, easing: .easeInOut),
+            VideoExportSegment(position: 0.0, duration: 2.2, easing: .easeInOut),
+            VideoExportSegment(position: 1.0, duration: 2.2, easing: .easeInOut),
         ]
         
         // Create output URL in Documents directory
@@ -166,7 +172,7 @@ class ExampleViewController: UIViewController {
             beforeImage: beforeImage,
             afterImage: afterImage,
             mode: mode,
-            startingPosition: 0.0,
+            startingPosition: 0.3,
             segments: segments,
             outputURL: outputURL
         ) { [weak self] result in

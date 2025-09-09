@@ -259,6 +259,9 @@ public class RSBeforeAfterVideoExporter {
         size: CGSize
     ) -> RSBeforeAfterImageView {
         let view = RSBeforeAfterImageView(frame: CGRect(origin: .zero, size: size))
+        view.grabHandleSize = .zero
+        view.grabHandleIcon = nil
+        view.grabHandleCornerRadius = 0
         view.configure(before: beforeImage, after: afterImage)
         
         view.setNeedsLayout()
@@ -274,7 +277,7 @@ public class RSBeforeAfterVideoExporter {
     ) -> UIView {
         // Create container view with orange background
         let containerView = UIView(frame: CGRect(origin: .zero, size: canvasSize))
-        containerView.backgroundColor = UIColor.systemOrange
+        containerView.backgroundColor = UIColor.systemPink
         
         // Calculate RSBeforeAfterImageView size and position
         let inputAspectRatio = beforeImage.size.width / beforeImage.size.height
@@ -303,7 +306,13 @@ public class RSBeforeAfterVideoExporter {
         let beforeAfterView = RSBeforeAfterImageView(frame: CGRect(
             x: x, y: y, width: viewWidth, height: viewHeight
         ))
+        beforeAfterView.grabHandleSize = .zero
+        beforeAfterView.grabHandleIcon = nil
+        beforeAfterView.grabHandleCornerRadius = 0
         beforeAfterView.configure(before: beforeImage, after: afterImage)
+        beforeAfterView.layer.cornerRadius = 20
+        beforeAfterView.layer.cornerCurve = .continuous
+        beforeAfterView.clipsToBounds = true
         
         containerView.addSubview(beforeAfterView)
         
