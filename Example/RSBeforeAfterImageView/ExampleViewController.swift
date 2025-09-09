@@ -95,19 +95,24 @@ class ExampleViewController: UIViewController {
     }
     
     func loadBeforeAfterAssets() {
+        //let beforeImage = UIImage(named: "r33_before")
+        //let afterImage = UIImage(named: "r33_after")
+        let beforeImage = UIImage(named: "birthday_girl_before")
+        let afterImage = UIImage(named: "birthday_girl_after")
+        
         self.beforeAfterImageView.configure(
-            before: UIImage(named: "r33_before")!,
-            after: UIImage(named: "r33_after")!
+            before: beforeImage!,
+            after: afterImage!
         )
     }
     
     @objc func exportVideoTapped() {
-        guard let beforeImage = UIImage(named: "r33_before"),
-              let afterImage = UIImage(named: "r33_after") else {
+        guard let beforeImage = self.beforeAfterImageView.bottomImageView.image,
+              let afterImage = self.beforeAfterImageView.topImageView.image else {
             showAlert(title: "Error", message: "Could not load images")
             return
         }
-        
+
         // Show action sheet to select export mode
         let actionSheet = UIAlertController(title: "Export Video", message: "Choose export format", preferredStyle: .actionSheet)
         
