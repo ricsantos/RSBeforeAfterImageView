@@ -345,8 +345,8 @@ public class RSBeforeAfterImageView: UIView {
 
     // Public setup
     public func configure(before: UIImage, after: UIImage) {
-        bottomImageView.image = before
-        topImageView.image = after
+        topImageView.image = before
+        bottomImageView.image = after
     }
 }
 

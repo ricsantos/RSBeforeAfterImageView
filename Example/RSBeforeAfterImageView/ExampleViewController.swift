@@ -107,8 +107,8 @@ class ExampleViewController: UIViewController {
     }
     
     @objc func exportVideoTapped() {
-        guard let beforeImage = self.beforeAfterImageView.bottomImageView.image,
-              let afterImage = self.beforeAfterImageView.topImageView.image else {
+        guard let beforeImage = self.beforeAfterImageView.topImageView.image,
+              let afterImage = self.beforeAfterImageView.bottomImageView.image else {
             showAlert(title: "Error", message: "Could not load images")
             return
         }
@@ -155,9 +155,10 @@ class ExampleViewController: UIViewController {
         ]
         
         let segments = [
-            VideoExportSegment(position: 1.0, duration: 0.8, easing: .easeInOut),
-            VideoExportSegment(position: 0.0, duration: 2.2, easing: .easeInOut),
-            VideoExportSegment(position: 1.0, duration: 2.2, easing: .easeInOut),
+            VideoExportSegment(position: 1.0, duration: 1.0, easing: .easeInOut),
+            VideoExportSegment(position: 0.0, duration: 1.7, easing: .easeInOut),
+            VideoExportSegment(position: 1.0, duration: 1.7, easing: .easeInOut),
+            VideoExportSegment(position: 0.0, duration: 1.7, easing: .easeInOut),
         ]
         
         // Create output URL in Documents directory
