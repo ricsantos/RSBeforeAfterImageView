@@ -7,6 +7,16 @@
 import UIKit
 import QuartzCore
 
+public class RSBeforeAfterImageSet {
+    var beforeImage: UIImage
+    var afterImage: UIImage
+    
+    init(beforeImage: UIImage, afterImage: UIImage) {
+        self.beforeImage = beforeImage
+        self.afterImage = afterImage
+    }
+}
+
 public class RSBeforeAfterImageView: UIView {
     /// The bottom image, will be visible when the divider is to the left
     public let bottomImageView = UIImageView()
@@ -347,6 +357,11 @@ public class RSBeforeAfterImageView: UIView {
     public func configure(before: UIImage, after: UIImage) {
         topImageView.image = before
         bottomImageView.image = after
+    }
+    
+    public func configure(with set: RSBeforeAfterImageSet) {
+        topImageView.image = set.beforeImage
+        bottomImageView.image = set.afterImage
     }
 }
 
